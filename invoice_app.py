@@ -34,7 +34,7 @@ def index():
                     'name': item,
                     'quantity': quantity,
                     'rate': rate,
-                    'amount': amount
+                    'amount': amount,
                     'note': note
                 })
 
