@@ -24,6 +24,7 @@ def index():
             item = request.form.get(f'item_{i}')
             quantity = request.form.get(f'quantity_{i}')
             rate = request.form.get(f'rate_{i}')
+            note = request.form.get(f'note_{i}')
             if item:
                 quantity = int(quantity) if quantity else 1
                 rate = float(rate) if rate else 0
@@ -34,6 +35,7 @@ def index():
                     'quantity': quantity,
                     'rate': rate,
                     'amount': amount
+                    'note': note
                 })
 
         pdf = FPDF()
@@ -95,6 +97,12 @@ def index():
                 col_idx += 1
             pdf.cell(col_widths[col_idx], 8, f"{currency_symbol}{item['amount']:.2f}", 1, 0, 'C')
             pdf.ln()
+            if item.get('note'):
+                pdf.set_font("Arial", "I", 9)
+                pdf.set_text_color(80)
+                pdf.multi_cell(0, 6, f"   {item['note']}", border=0)
+                pdf.set_font("Arial", size=10)
+                pdf.set_text_color(0)
 
         pdf.set_font("Arial", "B", 10)
         pdf.cell(sum(col_widths[:-1]), 8, "Total", 1)
