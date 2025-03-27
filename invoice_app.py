@@ -55,14 +55,14 @@ def index():
 
         pdf.set_y(60)
         pdf.set_font("Arial", "B", 10)
-        pdf.cell(95, 7, "Billed By:", 1)
-        pdf.cell(95, 7, "Billed To:", 1, ln=True)
+        pdf.cell(85, 7, "Billed By:", 1)
+        pdf.cell(85, 7, "Billed To:", 1, ln=True)
 
         pdf.set_font("Arial", size=10)
-        pdf.cell(95, 7, billed_by_name, 1)
-        pdf.cell(95, 7, billed_to_name, 1, ln=True)
-        pdf.cell(95, 7, billed_by_country, 1)
-        pdf.cell(95, 7, billed_to_country, 1, ln=True)
+        pdf.cell(85, 7, billed_by_name, 1)
+        pdf.cell(85, 7, billed_to_name, 1, ln=True)
+        pdf.cell(85, 7, billed_by_country, 1)
+        pdf.cell(85, 7, billed_to_country, 1, ln=True)
 
         pdf.set_y(pdf.get_y() + 10)
         pdf.set_font("Arial", "B", 10)
