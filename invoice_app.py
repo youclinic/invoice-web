@@ -48,6 +48,7 @@ def index():
         pdf.set_font("Arial", size=10)
         pdf.set_y(45)
         pdf.cell(0, 10, f"Invoice No: A{datetime.now().strftime('%y%m%d%H%M')}", ln=True)
+        pdf.set_y(40)
         pdf.cell(0, 10, f"Date: {datetime.now().strftime('%Y-%m-%d')}", ln=True)
 
         pdf.set_y(60)
