@@ -9,97 +9,102 @@ app = Flask(__name__)
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        invoice_type = request.form.get('invoice_type')
-        billed_by = request.form.get('billed_by')
-        billed_by_country = request.form.get('billed_by_country')
-        billed_to = request.form.get('billed_to')
-        billed_to_country = request.form.get('billed_to_country')
-        invoice_no = request.form.get('invoice_no')
-        invoice_date = request.form.get('invoice_date')
-        currency = request.form.get('currency')
+        invoice_type = request.form.get('invoice_type', 'Invoice')
+        billed_by_name = request.form.get('billed_by_name', '')
+        billed_by_country = request.form.get('billed_by_country', '')
+        billed_to_name = request.form.get('billed_to_name', '')
+        billed_to_country = request.form.get('billed_to_country', '')
+        currency_symbol = request.form.get('currency', '$')
+        show_quantity = request.form.get('show_quantity') == 'on'
+        show_rate = request.form.get('show_rate') == 'on'
 
         items = []
-        total = 0.0
-        for i in range(1, 6):
+        total = 0
+        for i in range(1, 11):
             item = request.form.get(f'item_{i}')
             quantity = request.form.get(f'quantity_{i}')
             rate = request.form.get(f'rate_{i}')
             if item:
-                quantity = int(quantity) if quantity else 0
-                rate = float(rate) if rate else 0.0
-                amount = quantity * rate if quantity and rate else 0.0
+                quantity = int(quantity) if quantity else 1
+                rate = float(rate) if rate else 0
+                amount = quantity * rate
                 total += amount
                 items.append({
-                    'item': item,
-                    'quantity': quantity if quantity else '',
-                    'rate': f"{currency}{rate:,.2f}" if rate else '',
-                    'amount': f"{currency}{amount:,.2f}" if amount else ''
+                    'name': item,
+                    'quantity': quantity,
+                    'rate': rate,
+                    'amount': amount
                 })
 
         pdf = FPDF()
         pdf.add_page()
         pdf.image("template_clean.jpg", x=0, y=0, w=210, h=297)
-        pdf.set_y(20)
 
+        pdf.set_y(35)
         pdf.set_font("Arial", "B", 16)
         pdf.set_text_color(0, 51, 102)
-        title = "Invoice" if invoice_type == "Invoice" else "Proforma Invoice"
-        pdf.cell(0, 10, title, ln=True, align="C")
+        pdf.cell(0, 10, f"Proforma Invoice" if invoice_type == "Proforma" else "Invoice", ln=True, align="C")
 
         pdf.set_font("Arial", size=10)
-        pdf.set_y(35)
-        pdf.cell(0, 10, f"Invoice No: {invoice_no}", ln=True)
-        pdf.cell(0, 10, f"Date: {invoice_date}", ln=True)
+        pdf.set_y(45)
+        pdf.cell(0, 10, f"Invoice No: A{datetime.now().strftime('%y%m%d%H%M')}", ln=True)
+        pdf.cell(0, 10, f"Date: {datetime.now().strftime('%Y-%m-%d')}", ln=True)
 
-        # Billed Info
         pdf.set_y(60)
         pdf.set_font("Arial", "B", 10)
-        pdf.cell(95, 8, "Billed By:", border=1)
-        pdf.cell(95, 8, "Billed To:", border=1, ln=True)
+        pdf.cell(95, 7, "Billed By:", 1)
+        pdf.cell(95, 7, "Billed To:", 1, ln=True)
 
         pdf.set_font("Arial", size=10)
-        pdf.cell(95, 8, billed_by, border=1)
-        pdf.cell(95, 8, billed_to, border=1, ln=True)
+        pdf.cell(95, 7, billed_by_name, 1)
+        pdf.cell(95, 7, billed_to_name, 1, ln=True)
+        pdf.cell(95, 7, billed_by_country, 1)
+        pdf.cell(95, 7, billed_to_country, 1, ln=True)
 
-        pdf.cell(95, 8, billed_by_country, border=1)
-        pdf.cell(95, 8, billed_to_country, border=1, ln=True)
-
-        # Table Header
         pdf.set_y(pdf.get_y() + 10)
-        pdf.set_font("Arial", "B", 11)
-        pdf.set_fill_color(87, 111, 230)
+        pdf.set_font("Arial", "B", 10)
+        pdf.set_fill_color(80, 100, 200)
         pdf.set_text_color(255)
-        pdf.cell(80, 8, "Item", border=1, fill=True)
-        pdf.cell(30, 8, "Quantity", border=1, fill=True)
-        pdf.cell(40, 8, "Rate", border=1, fill=True)
-        pdf.cell(40, 8, "Amount", border=1, ln=True, fill=True)
 
-        # Table Rows
-        pdf.set_font("Arial", size=10)
+        col_widths = [90]
+        headers = ["Item"]
+        if show_quantity:
+            headers.append("Quantity")
+            col_widths.append(25)
+        if show_rate:
+            headers.append("Rate")
+            col_widths.append(35)
+        headers.append("Amount")
+        col_widths.append(40)
+
+        for i, header in enumerate(headers):
+            pdf.cell(col_widths[i], 8, header, 1, 0, 'C', True)
+        pdf.ln()
+
         pdf.set_text_color(0)
-        for row in items:
-            pdf.cell(80, 8, row['item'], border=1)
-            pdf.cell(30, 8, str(row['quantity']), border=1)
-            pdf.cell(40, 8, row['rate'], border=1)
-            pdf.cell(40, 8, row['amount'], border=1, ln=True)
+        pdf.set_font("Arial", size=10)
+        for item in items:
+            pdf.cell(col_widths[0], 8, item['name'], 1)
+            col_idx = 1
+            if show_quantity:
+                pdf.cell(col_widths[col_idx], 8, str(item['quantity']), 1, 0, 'C')
+                col_idx += 1
+            if show_rate:
+                pdf.cell(col_widths[col_idx], 8, f"{currency_symbol}{item['rate']:.2f}", 1, 0, 'C')
+                col_idx += 1
+            pdf.cell(col_widths[col_idx], 8, f"{currency_symbol}{item['amount']:.2f}", 1, 0, 'C')
+            pdf.ln()
 
-        # Total
-        pdf.set_font("Arial", "B", 11)
-        pdf.cell(150, 8, "Total", border=1)
-        pdf.cell(40, 8, f"{currency}{total:,.2f}", border=1, ln=True)
+        pdf.set_font("Arial", "B", 10)
+        pdf.cell(sum(col_widths[:-1]), 8, "Total", 1)
+        pdf.cell(col_widths[-1], 8, f"{currency_symbol}{total:.2f}", 1, ln=True)
 
-        # Footer Note
-        pdf.set_font("Arial", "I", 9)
-        pdf.set_text_color(80)
-        pdf.cell(0, 6, "This invoice is valid for cash payment only.", ln=True, align="R")
-
-        # Save PDF
         temp_dir = tempfile.gettempdir()
-        filename = os.path.join(temp_dir, f"invoice_{invoice_no}.pdf")
+        filename = os.path.join(temp_dir, f"invoice_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf")
         pdf.output(filename)
         return send_file(filename, as_attachment=True)
 
-    return render_template('invoice_form.html', datetime=datetime)
+    return render_template('invoice_form.html')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+    app.run(debug=True)
